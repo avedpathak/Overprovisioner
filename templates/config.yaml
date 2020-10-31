@@ -1,0 +1,14 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: overprovisioning-autoscaler
+  namespace: kube-system
+data:
+  linear: |-
+    {
+      "coresPerReplica": 10,
+      "nodesPerReplica": 1,
+      "min": 1,
+      "max": 100,
+      "preventSinglePointFailure": true      
+    }

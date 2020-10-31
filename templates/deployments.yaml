@@ -1,0 +1,64 @@
+{{- $relName := .Release.Name -}}
+{{- $relService := .Release.Service -}}
+{{- $fullname :=  include "cluster-overprovisioner.fullname" . -}}
+{{- $name :=  include "cluster-overprovisioner.name" . -}}
+{{- $chart :=  include "cluster-overprovisioner.chart" . -}}
+{{- $commonLabels :=  include "cluster-overprovisioner.labels" . -}}
+{{- $matchLabels :=  include "cluster-overprovisioner.matchLabels" . -}}
+{{- $chartName := .Chart.Name }}
+{{- $priorityClassName := .Values.priorityClassOverprovision.name }}
+
+{{ range .Values.placeholder.deployments }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overprovisioning
+  namespace: {{ .namespace }}
+spec:
+  replicas: {{ .replicaCount }}
+  selector:
+    matchLabels:
+      app.pause-container/deployment: placeholder
+  template:
+    metadata:
+      labels:
+        app.pause-container/deployment: placeholder
+    spec:
+      priorityClassName: {{ $priorityClassName }}
+      containers:
+      - name: reserve-resources
+        image: "{{ .image.repository }}:{{ .image.tag }}"
+        resources:
+          {{- toYaml .resources | nindent 12 }}
+{{- end }}
+---
+{{ range .Values.overprovisioner.deployments }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overprovisioning-autoscaler
+  namespace: {{ .namespace }}
+  labels:
+    app.cluster-overprovisioner/deployment: overprovisioner
+spec:
+  selector:
+    matchLabels:
+      app.cluster-overprovisioner/deployment: overprovisioner
+  replicas: {{ .replicaCount }}
+  template:
+    metadata:
+      labels:
+        app.cluster-overprovisioner/deployment: overprovisioner
+    spec:
+      serviceAccountName: {{ .serviceAccountName }}
+      containers:
+        - name: autoscaler
+          image: "{{ .image.repository }}:{{ .image.tag }}"
+          command:
+            - ./cluster-proportional-autoscaler
+            - --namespace=kube-system
+            - --configmap=overprovisioning-autoscaler
+            - --target=deployment/overprovisioning
+            - --logtostderr=true
+            - --v=2
+{{- end }}

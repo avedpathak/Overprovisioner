@@ -1,0 +1,61 @@
+priorityClassOverprovision:
+  # priorityClassOverprovision.name -- Name of the overprovision priorityClass
+  name: overprovisioning
+  # priorityClassOverprovision.value -- Priority value of the overprovision priorityClass
+  value: -1
+
+priorityClassDefault:
+  # priorityClassDefault.enabled -- If true, enable default priorityClass
+  enabled: true
+  # priorityClassDefault.name -- Name of the default priorityClass
+  name: default
+  # priorityClassDefault.value -- Priority value of the default priorityClass
+  value: 0
+
+
+
+
+# deployments -- Define optional additional deployments - A default deployment is included by default
+# @default -- {}
+placeholder:
+ deployments:
+ - namespace: kube-system
+   image:
+     repository: k8s.gcr.io/pause
+     tag: 3.1    
+     pullPolicy: IfNotPresent
+   replicaCount: 1
+   resources:
+     limits:
+       # deployments[0].resources.limits.cpu -- Default Deployment - CPU limit for the overprovision pods
+       cpu: 3000m
+       # deployments[0].resources.limits.memory -- Default Deployment - Memory limit for the overprovision pods
+       memory: 3000Mi
+     requests:
+       # deployments[0].resources.requests.cpu -- Default Deployment - CPU requested for the overprovision pods
+       cpu: 2000m
+       # deployments[0].resources.requests.memory -- Default Deployment - Memory requested for the overprovision pods
+       memory: 2000Mi
+   # nameOverride -- Override the name of the chart
+   nameOverride: placeholder
+   # fullnameOverride -- Override the fullname of the chart
+   fullnameOverride: ""
+
+overprovisioner:
+ deployments:
+ - namespace: kube-system 
+   image:      
+     repository: gcr.io/google_containers/cluster-proportional-autoscaler-amd64    
+     tag: 1.7.1      
+     pullPolicy: IfNotPresent  
+   replicaCount: 1
+   resources:
+     limits:
+       memory: 100Mi
+     requests:
+       memory: 200Mi
+          # nameOverride -- Override the name of the chart
+   serviceAccountName: cluster-proportional-autoscaler
+   nameOverride: overprovisioner
+   # fullnameOverride -- Override the fullname of the chart
+   fullnameOverride: ""
